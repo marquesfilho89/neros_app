@@ -32,11 +32,11 @@ async function main() {
         { name: 'Abertura', start: '08:00', end: '12:00' },
         { name: 'Almoco', start: '12:00', end: '14:00' },
         { name: 'Fechamento', start: '14:00', end: '18:00' },
-      ] as Prisma.InputJsonValue,
+      ] as unknown as Prisma.InputJsonValue,
       peakHours: [
         { start: '12:00', end: '14:00', minCoverage: 80 },
         { start: '17:00', end: '19:00', minCoverage: 60 },
-      ] as Prisma.InputJsonValue,
+      ] as unknown as Prisma.InputJsonValue,
     },
   });
 

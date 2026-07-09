@@ -32,10 +32,10 @@ export class StoresService {
         { name: 'Abertura', start: '08:00', end: '12:00' },
         { name: 'Almoco', start: '12:00', end: '14:00' },
         { name: 'Fechamento', start: '14:00', end: '18:00' },
-      ]) as Prisma.InputJsonValue,
+      ]) as unknown as Prisma.InputJsonValue,
       peakHours: (dto.peakHours ?? [
         { start: '12:00', end: '14:00', minCoverage: 80 },
-      ]) as Prisma.InputJsonValue,
+      ]) as unknown as Prisma.InputJsonValue,
       tenant: { connect: { id: tenantId } },
     };
 
@@ -50,8 +50,8 @@ export class StoresService {
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.address !== undefined) data.address = dto.address;
     if (dto.numberOfCheckouts !== undefined) data.numberOfCheckouts = dto.numberOfCheckouts;
-    if (dto.shiftConfig !== undefined) data.shiftConfig = dto.shiftConfig as Prisma.InputJsonValue;
-    if (dto.peakHours !== undefined) data.peakHours = dto.peakHours as Prisma.InputJsonValue;
+    if (dto.shiftConfig !== undefined) data.shiftConfig = dto.shiftConfig as unknown as Prisma.InputJsonValue;
+    if (dto.peakHours !== undefined) data.peakHours = dto.peakHours as unknown as Prisma.InputJsonValue;
 
     return this.prisma.store.update({
       where: { id },
