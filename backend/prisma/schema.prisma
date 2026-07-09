@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id            String         @id @default(cuid())
+  name          String
+  cnpj          String         @unique
+  logoUrl       String?
+  roleConfig    Json           @default("{\"level1\":\"Fiscal\",\"level2\":\"Assistente\",\"level3\":\"Gerente\"}")
+  isActive      Boolean        @default(false)
+  stores        Store[]
+  users         User[]
+  subscriptions Subscription[]
+  paymentLogs   PaymentLog[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime       @default(now())
+}
+
+model Store {
+  id                String    @id @default(cuid())
+  tenantId          String
+  tenant            Tenant    @relation(fields: [tenantId], references: [id])
+  name              String
+  address           String?
+  numberOfCheckouts Int       @default(1)
+  shiftConfig       Json      @default("[{\"name\":\"Abertura\",\"start\":\"08:00\",\"end\":\"12:00\"},{\"name\":\"Almoco\",\"start\":\"12:00\",\"end\":\"14:00\"},{\"name\":\"Fechamento\",\"start\":\"14:00\",\"end\":\"18:00\"}]")
+  peakHours         Json      @default("[{\"start\":\"12:00\",\"end\":\"14:00\",\"minCoverage\":80}]")
+  employees         Employee[]
+  schedules         Schedule[]
+  createdAt         DateTime  @default(now())
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  password  String
+  level     Int        @default(1)
+  tenantId  String
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  storeId   String?
+  store     Store?     @relation(fields: [storeId], references: [id])
+  auditLogs AuditLog[]
+  createdAt DateTime   @default(now())
+}
+
+model Employee {
+  id              String              @id @default(cuid())
+  matricula       String
+  name            String
+  level           Int                 @default(1)
+  storeId         String
+  store           Store               @relation(fields: [storeId], references: [id])
+  schedules       Schedule[]
+  swapRequestsFrom ShiftSwapRequest[] @relation("FromEmployee")
+  swapRequestsTo   ShiftSwapRequest[] @relation("ToEmployee")
+  createdAt       DateTime            @default(now())
+
+  @@unique([matricula, storeId])
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  employeeId String
+  employee  Employee @relation(fields: [employeeId], references: [id])
+  date      DateTime
+  shiftStart String
+  shiftEnd   String
+  shiftName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ShiftSwapRequest {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  storeId             String
+  fromEmployeeId      String
+  toEmployeeId        String
+  fromScheduleId      String?
+  toScheduleId        String?
+  status              String   @default("PENDING_TARGET")
+  requestedDate       DateTime @default(now())
+  targetResponseDate  DateTime?
+  managerApprovalDate DateTime?
+  managerId           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  fromEmployee Employee @relation("FromEmployee", fields: [fromEmployeeId], references: [id])
+  toEmployee   Employee @relation("ToEmployee", fields: [toEmployeeId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  changes    Json?
+  createdAt  DateTime @default(now())
+}
+
+model Subscription {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  asaasId       String   @unique
+  status        String   @default("PENDING")
+  planType      String   @default("MONTHLY")
+  priceCents    Int
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PaymentLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  asaasId    String   @unique
+  status     String
+  valueCents Int
+  dueDate    DateTime?
+  paidAt     DateTime?
+  invoiceUrl String?
+  createdAt  DateTime @default(now())
+}
