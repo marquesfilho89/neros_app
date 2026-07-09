@@ -31,6 +31,7 @@ model Store {
   numberOfCheckouts Int       @default(1)
   shiftConfig       Json      @default("[{\"name\":\"Abertura\",\"start\":\"08:00\",\"end\":\"12:00\"},{\"name\":\"Almoco\",\"start\":\"12:00\",\"end\":\"14:00\"},{\"name\":\"Fechamento\",\"start\":\"14:00\",\"end\":\"18:00\"}]")
   peakHours         Json      @default("[{\"start\":\"12:00\",\"end\":\"14:00\",\"minCoverage\":80}]")
+  users             User[]
   employees         Employee[]
   schedules         Schedule[]
   createdAt         DateTime  @default(now())
