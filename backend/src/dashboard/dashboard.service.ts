@@ -45,7 +45,7 @@ export class DashboardService {
     }> = [];
 
     for (const store of stores) {
-      const peakHours = store.peakHours as Array<{ start: string; end: string; minCoverage: number }>;
+      const peakHours = store.peakHours as unknown as Array<{ start: string; end: string; minCoverage: number }>;
       if (!peakHours) continue;
 
       for (let d = new Date(weekStart); d < weekEnd; d.setDate(d.getDate() + 1)) {

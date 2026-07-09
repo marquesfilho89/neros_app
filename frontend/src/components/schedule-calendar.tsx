@@ -5,6 +5,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import { api } from '@/lib/api';
 import { CoverageAlertModal } from './coverage-alert-modal';
 
@@ -86,8 +87,11 @@ export function ScheduleCalendar({ storeId, employees, onRefresh }: Props) {
     const shiftStart = startStr.split('T')[1]?.substring(0, 5);
     const shiftEnd = endStr.split('T')[1]?.substring(0, 5);
     try {
-      await api.put(`/api/schedules/${info.event.id}`, { shiftStart, shiftEnd });
+      const res = await api.put(`/api/schedules/${info.event.id}`, { shiftStart, shiftEnd });
       await loadEvents();
+      if (res.data.coverageAlert) {
+        setAlerts(res.data.coverageAlert);
+      }
     } catch (err: any) {
       if (err.response?.status === 422) setAlerts(err.response.data.alerts || []);
       info.revert();
@@ -109,7 +113,7 @@ export function ScheduleCalendar({ storeId, employees, onRefresh }: Props) {
   async function confirmSchedule() {
     if (!modalEmployeeId) return;
     try {
-      await api.post('/api/schedules', {
+      const res = await api.post('/api/schedules', {
         employeeId: modalEmployeeId,
         date: modalDate,
         shiftStart: modalStart,
@@ -119,6 +123,9 @@ export function ScheduleCalendar({ storeId, employees, onRefresh }: Props) {
       setShowModal(false);
       await loadEvents();
       onRefresh();
+      if (res.data.coverageAlert) {
+        setAlerts(res.data.coverageAlert);
+      }
     } catch (err: any) {
       if (err.response?.status === 422) setAlerts(err.response.data.alerts || []);
     }
@@ -154,6 +161,7 @@ export function ScheduleCalendar({ storeId, employees, onRefresh }: Props) {
           center: 'title',
           right: 'dayGridMonth,timeGridWeek',
         }}
+        locales={[ptBrLocale]}
         locale="pt-br"
         initialView="timeGridWeek"
         editable={true}

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CoverageService } from './coverage.service';
 import { CreateScheduleDto, UpdateScheduleDto } from './dto/create-schedule.dto';
@@ -37,20 +37,6 @@ export class SchedulesService {
     });
     if (!employee) throw new NotFoundException('Funcionario nao encontrado');
 
-    const coverage = await this.coverageService.validateCoverage(
-      employee.storeId,
-      dto.date,
-      dto.shiftStart,
-      dto.shiftEnd,
-    );
-
-    if (!coverage.isCovered) {
-      throw new UnprocessableEntityException({
-        message: 'COVERAGE_ALERT',
-        alerts: coverage.alerts,
-      });
-    }
-
     const schedule = await this.prisma.schedule.create({
       data: {
         storeId: employee.storeId,
@@ -62,7 +48,16 @@ export class SchedulesService {
       },
     });
 
-    return schedule;
+    const coverage = await this.coverageService.validateCoverage(
+      employee.storeId,
+      dto.date,
+    );
+
+    if (!coverage.isCovered) {
+      return { schedule, coverageAlert: coverage.alerts };
+    }
+
+    return { schedule };
   }
 
   async update(id: string, dto: UpdateScheduleDto) {
@@ -72,32 +67,26 @@ export class SchedulesService {
     });
     if (!existing) throw new NotFoundException('Escala nao encontrada');
 
-    const shiftStart = dto.shiftStart ?? existing.shiftStart;
-    const shiftEnd = dto.shiftEnd ?? existing.shiftEnd;
-    const dateStr = existing.date.toISOString().split('T')[0];
-
-    const coverage = await this.coverageService.validateCoverage(
-      existing.storeId,
-      dateStr,
-      shiftStart,
-      shiftEnd,
-    );
-
-    if (!coverage.isCovered) {
-      throw new UnprocessableEntityException({
-        message: 'COVERAGE_ALERT',
-        alerts: coverage.alerts,
-      });
-    }
-
-    return this.prisma.schedule.update({
+    const updated = await this.prisma.schedule.update({
       where: { id },
       data: {
-        shiftStart,
-        shiftEnd,
+        shiftStart: dto.shiftStart ?? existing.shiftStart,
+        shiftEnd: dto.shiftEnd ?? existing.shiftEnd,
         shiftName: dto.shiftName ?? existing.shiftName,
       },
     });
+
+    const dateStr = existing.date.toISOString().split('T')[0];
+    const coverage = await this.coverageService.validateCoverage(
+      existing.storeId,
+      dateStr,
+    );
+
+    if (!coverage.isCovered) {
+      return { schedule: updated, coverageAlert: coverage.alerts };
+    }
+
+    return { schedule: updated };
   }
 
   async remove(id: string) {
