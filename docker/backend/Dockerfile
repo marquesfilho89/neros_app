@@ -27,4 +27,4 @@ COPY --from=builder /app/package*.json ./
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "while ! nc -z postgres 5432; do echo 'Aguardando postgres...'; sleep 2; done; npx prisma migrate deploy && node dist/main"]
