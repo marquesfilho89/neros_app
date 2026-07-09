@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/create-store.dto';
 
@@ -23,29 +24,38 @@ export class StoresService {
   }
 
   async create(tenantId: string, dto: CreateStoreDto) {
-    return this.prisma.store.create({
-      data: {
-        ...dto,
-        shiftConfig: dto.shiftConfig ?? [
-          { name: 'Abertura', start: '08:00', end: '12:00' },
-          { name: 'Almoco', start: '12:00', end: '14:00' },
-          { name: 'Fechamento', start: '14:00', end: '18:00' },
-        ],
-        peakHours: dto.peakHours ?? [
-          { start: '12:00', end: '14:00', minCoverage: 80 },
-        ],
-        tenant: { connect: { id: tenantId } },
-      },
-    });
+    const data: Prisma.StoreCreateInput = {
+      name: dto.name,
+      address: dto.address,
+      numberOfCheckouts: dto.numberOfCheckouts,
+      shiftConfig: (dto.shiftConfig ?? [
+        { name: 'Abertura', start: '08:00', end: '12:00' },
+        { name: 'Almoco', start: '12:00', end: '14:00' },
+        { name: 'Fechamento', start: '14:00', end: '18:00' },
+      ]) as Prisma.InputJsonValue,
+      peakHours: (dto.peakHours ?? [
+        { start: '12:00', end: '14:00', minCoverage: 80 },
+      ]) as Prisma.InputJsonValue,
+      tenant: { connect: { id: tenantId } },
+    };
+
+    return this.prisma.store.create({ data });
   }
 
   async update(id: string, dto: UpdateStoreDto) {
     const store = await this.prisma.store.findUnique({ where: { id } });
     if (!store) throw new NotFoundException('Loja nao encontrada');
 
+    const data: Prisma.StoreUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.address !== undefined) data.address = dto.address;
+    if (dto.numberOfCheckouts !== undefined) data.numberOfCheckouts = dto.numberOfCheckouts;
+    if (dto.shiftConfig !== undefined) data.shiftConfig = dto.shiftConfig as Prisma.InputJsonValue;
+    if (dto.peakHours !== undefined) data.peakHours = dto.peakHours as Prisma.InputJsonValue;
+
     return this.prisma.store.update({
       where: { id },
-      data: dto,
+      data,
     });
   }
 

@@ -37,7 +37,7 @@ export class CoverageService {
       return { isCovered: true, alerts: [] };
     }
 
-    const peakHours = store.peakHours as PeakHour[];
+    const peakHours = store.peakHours as unknown as PeakHour[];
     const totalCheckouts = store.numberOfCheckouts;
 
     if (!peakHours || peakHours.length === 0) {
